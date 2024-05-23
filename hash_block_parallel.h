@@ -2,6 +2,7 @@
 #define hash_block_parallel_hpp
 
 #include "utils.h"
+
 using namespace std;
 constexpr int BLOCK_SIZE = 32;
 constexpr int GRANULARITY = 512;
@@ -67,8 +68,8 @@ void build(const T &seq,
               table_seq[i - 1][j] *
                   mypower(PRIME_BASE, BLOCK_SIZE * (1 << (i - 1))) +
               table_seq[i - 1][j + (1 << (i - 1))];
-        },
-        GRANULARITY);
+        }
+        ,GRANULARITY);
   }
   // for (size_t i = 0; i < table_seq.size(); i++) {
   // printf("table[%zu]: ", i);
@@ -105,15 +106,15 @@ void construct_table(T &A, T &B,
   }
   // logn
 
-  /**
-   * standard block size
-   */
+  //
+   // standard block size
+   //
   parlay::internal::timer t;
   int BLOCK_SIZE_UPPER = FASTLOG2(n);
 
-  /**
-   * 32 / 64 ?
-   */
+  //
+   // 32 / 64 ?
+   //
   build(A, table_A);
   build(B, table_B);
 
@@ -143,6 +144,7 @@ void construct_table(T &A, T &B,
   int num_blocks_b = b_actual_size / BLOCK_SIZE;
 
   parlay::parallel_for(0, num_blocks_a, [&](size_t i) {
+  
     int s = i * BLOCK_SIZE;
     int e = (i + 1) * BLOCK_SIZE;
     pre_su_a[s].first = A[s];

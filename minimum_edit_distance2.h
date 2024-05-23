@@ -3,7 +3,7 @@
 // Returns an 32-bit integer of edit distance for two sequences A and B
 // using bfs and hashing table query for lcp, in parallel
 template <typename Seq>
-int minimum_edit_distance(const Seq &a, const Seq &b, double *building_tm)
+int minimum_edit_distance2(const Seq &a, const Seq &b, double *building_tm)
 {
   // build sparse table
 
@@ -29,8 +29,14 @@ int minimum_edit_distance(const Seq &a, const Seq &b, double *building_tm)
   build_hash_table(a, b, table_s1, table_s2, powerN1, logN1);
   auto Diag = [&](int i, int j)
   { return i - j + m; };
-  parlay::sequence<int> max_row(n + m + 1, -1), temp(n + m + 1), old_max(n + m + 1, -1);
+  /*auto Diag2 = [&](int i, int j){
+    return i - j;
+  };*/
 
+  parlay::sequence<int> max_row(n + m + 1, -1), temp(n + m + 1);
+  //parlay::sequence<int> old_max(n - m + 20, -1);
+  parlay::sequence<int> old_max(50, -1);
+ 
   // Jakob Engel Tomfoolery
   Seq a_reversed = a;
   std::reverse(a_reversed.begin(), a_reversed.end());
@@ -43,7 +49,17 @@ int minimum_edit_distance(const Seq &a, const Seq &b, double *building_tm)
   parlay::sequence<int> rev_logN1;
   parlay::sequence<int> rev_powerN1;
   build_hash_table(a_reversed, b_reversed, Rev_table_s1, Rev_table_s2, rev_powerN1, rev_logN1);
-  parlay::sequence<int> rev_max_row(n + m + 1, -1), rev_temp(n + m + 1), rev_old_max(n + m + 1, -1);
+  parlay::sequence<int> rev_max_row(n + m + 1, -1), rev_temp(n + m + 1);
+  //parlay::sequence<int> rev_old_max(n - m + 20, -1);
+  parlay::sequence<int> rev_old_max(50, -1);
+  auto get_index = [&](int index) -> int {
+        return index < 0 ? old_max.size() + index : index;
+    };
+
+  auto get_index_rev = [&](int index) -> int {
+        return index < 0 ? rev_old_max.size() + index : index;
+    };
+
 
   // Above is the play area - Beware
   *building_tm = tmr.elapsed();
@@ -67,6 +83,13 @@ int minimum_edit_distance(const Seq &a, const Seq &b, double *building_tm)
 
   for (;;)
   {
+    if((bk + fk) > ((old_max.size()) * 0.75)){
+        //size_t required_size = std::min(static_cast<size_t>(n + m + 1), static_cast<size_t>(old_max.size() * 3.5));
+        size_t required_size = std::min(static_cast<size_t>(n + m + 1), (old_max.size() * 3));
+        old_max.resize(required_size, -1);
+        rev_old_max.resize(required_size, -1);
+    }
+
     int i = 0;
     int ix = 2;
     parlay::parallel_for(i, ix, [&](int dir)
@@ -77,13 +100,11 @@ int minimum_edit_distance(const Seq &a, const Seq &b, double *building_tm)
       int r = Diag(std::min(fk, int(n)), 0);
     //Forwards reached stop
       if (max_row[Diag(n, m)] == n) {return fk +bk;}  
-    //Backwards reached stop
-      //if (rev_max_row[Diag(n2, m2)] == n2) {return fk +bk;}
-      
+    
     // find path
       for(int id = l; id < r+1; id++) {
         int t = -1;
-        old_max[id] = max_row[id];
+        old_max[get_index(id-m)] = max_row[id];
         if (max_row[id] != -1) {
           int i = max_row[id];
           int j = i + m - id;
@@ -125,12 +146,15 @@ int minimum_edit_distance(const Seq &a, const Seq &b, double *building_tm)
     bk++;
     int l2 = Diag(0, std::min(bk, int(m2)));
     int r2 = Diag(std::min(bk, int(n2)), 0);
+
+    //Backwards reached stop
+      if (rev_max_row[Diag(n2, m2)] == n2) {return fk +bk;}
+      
   //Here comes backwards boy! Dun dun dun! 
   // find path
-    if (rev_max_row[Diag(n2, m2)] == n2) {return fk +bk;}
     
     for (int id2 = l2; id2 < r2+1; id2++) {
-      rev_old_max[id2] = rev_max_row[id2];
+      rev_old_max[get_index_rev(id2-m)] = rev_max_row[id2];
       int t2 = -1;
       if (rev_max_row[id2] != -1) {
         int i2 = rev_max_row[id2];
@@ -168,26 +192,26 @@ int minimum_edit_distance(const Seq &a, const Seq &b, double *building_tm)
     }
     parlay::parallel_for(l2, r2 + 1,
                          [&](int id) { rev_max_row[id] = std::min(rev_temp[id], id); });
-  }});
+    }
+  });
   
   int l = Diag(0, std::min(fk, int(m)));
   int r = Diag(std::min(fk, int(n)), 0);
   bool found = false;
   parlay::parallel_for(l, r + 1, [&](int id){
     if (max_row[id] + rev_max_row[Total_length-id] >= n){
-      if ((max_row[id] + rev_old_max[Total_length-id] >= n || old_max[id] + rev_max_row[Total_length-id] >= n) && !found){
+      if ((max_row[id] + rev_old_max[get_index_rev(Total_length-id-m)] >= n || old_max[get_index(id-m)] + rev_max_row[Total_length-id] >= n) && !found){
         found = true;
       }
       pathFound = true;}
-      //return fk + bk;}
     }); 
     if (found){
       bk--;
-    } 
+    }
 
     if (pathFound)
     {
-      break;
+      return fk + bk;
     }
     
   }

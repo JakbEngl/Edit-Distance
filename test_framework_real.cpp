@@ -12,11 +12,24 @@
 #include "edit_distance_dp.h"
 #include "edit_distance_hashing.h"
 #include "edit_distance_parallel.h"
-#include "edit_distance_rolling_blk.h"
-#include "edit_distance_rolling_hashing.h"
+#include "edit_distance_Bidirectional_Hash.h"
+#include "edit_distance_SA_Pruning.h"
 #include "minimum_edit_distance.h"
 
-constexpr size_t NUM_TESTS = 4;
+//A*
+#include "A_editDistance_Block_hashing.h"
+#include "A_editDistance_Hashing.h"
+#include "A_editDistance_Parallel.h"
+//SecondBidirectional
+#include "Bidirectional2_edit_distance_block_hash.h"
+#include "Bidirectional2_edit_distance_hash.h"
+#include "Bidirectional2_edit_distance_SA.h"
+//SequentialBidirectional
+#include "edit_distance_Bidirectional_Hash.h"
+#include "edit_distance_Bidirectional_SA.h"
+#include "edit_distance_Bidirerctional_block_hash.h"
+
+constexpr size_t NUM_TESTS = 13;
 size_t num_rounds = 3;
 
 class InputParser {
@@ -71,39 +84,49 @@ auto generate_strings(size_t n, size_t k, size_t alpha, size_t seed = 0) {
 }
 
 std::string test_name(int id) {
-  switch (id) {
-    case 0:
-      return "BFS-Hash";
-      break;
-    case 1:
-      return "BFS-B-Hash";
-      break;
-    case 2:
-      return "BFS-SA";
-      break;
-    case 3:
-      return "DaC-MM-K";
-      break;
-    case 4:
-      return "DaC-MM";
-      break;
-    case 5:
-      return "DP";
-      break;
-    case 6:
-      return "ParlayLib";
-      break;
-    case 7:
-      return "BFS-SA-DC3";
-      break;
-    case 8:
-      return "BFS-Rolling";
-      break;
-    case 9:
-      return "BFS-B-Rolling";
-      break;
-    default:
-      abort();
+  switch (id)
+  {
+  case 0:
+    return "BFS-Hash";
+    break;
+  case 1:
+    return "BFS-B-Hash";
+    break;
+  case 2:
+    return "BFS-SA";
+    break;
+  case 3:
+    return "SequentialDirection-Hash";
+    break;
+  case 4:
+    return "SequentialDirection-B-Hash";
+    break;
+  case 5:
+    return "SequentialDirection-SA";
+    break;
+  case 6:
+    return "ParallelDirections-Hash";
+    break;
+  case 7:
+    return "ParallelDirections-B-Hash";
+    break;
+  case 8:
+    return "ParallelDirections-SA";
+    break;
+  case 9:
+    return "A*-Hash";
+    break;
+  case 10:
+    return "A*-B-Hash";
+    break;
+  case 11:
+    return "A*-SA";
+    break;
+  case 12:
+    return "DP - Windowed";
+    break;
+  default:
+    abort();
   }
 }
 
@@ -117,47 +140,54 @@ double test(const parlay::sequence<T> &A, const parlay::sequence<T> &B,
     parlay::internal::timer t;
     double b_time;
     size_t num_edits;
-    switch (id) {
-      case 0:
-        num_edits = EditDistanceHashParallel(A, B, &b_time);
-        break;
-      case 1:
-        num_edits = EditDistanceBlockHashParallel(A, B, &b_time);
-        break;
-      case 2:
-        num_edits = EditDistanceSA(A, B, &b_time);
-        break;
-      case 3:
-        num_edits = DAC_MM_K<sequence<uint32_t>>(A, B).solve();
-        break;
-      case 4:
-        num_edits = DAC_MM<sequence<uint32_t>>(A, B).solve();
-        break;
-      case 5:
-        num_edits = EditDistanceDP(A, B);
-        break;
-      case 6:
-        num_edits = minimum_edit_distance(A, B);
-        break;
-      case 7:
-        num_edits = EditDistanceSA(A, B, &b_time, true);
-        break;
-      case 8:
-        num_edits = EditDistanceRollingHash(A, B, &b_time);
-        break;
-      case 9:
-        // std::cout << "Seq A: " << endl;
-        // for (int i = 0; i < 100; i++) {
-        //   std::cout << A[i] << " ";
-        // }
-        // std::cout << std::endl << "Seq B: " << std::endl;
-        // for (int i = 0; i < 100; i++) {
-        //   std::cout << B[i] << " ";
-        // }
-        num_edits = EditDistanceRollingBlkHash(A, B, &b_time);
-        break;
-      default:
-        assert(0);
+    switch (id)
+    {
+    case 0:
+      num_edits = EditDistanceHashParallel(A, B, &b_time);
+      break;
+    case 1:
+      num_edits = EditDistanceBlockHashParallel(A, B, &b_time);
+      break;
+    case 2:
+      num_edits = EditDistanceSA(A, B, &b_time);
+      break;
+    case 3:
+      num_edits = EditDistanceHashSeqBidirectional(A, B, &b_time);
+      break;
+    case 4:
+      num_edits = EditDistanceBlockHashBidirectional(A, B, &b_time);
+      // num_edits = DAC_MM<sequence<uint32_t>>(A, B).solve();
+      break;
+    case 5:
+      num_edits = EditDistanceSA_Bidirectional1(A, B, &b_time, true);
+      // num_edits = EditDistanceDP(A, B);
+      break;
+    case 6:
+      num_edits = bidirectional2_edit_distance_hash(A, B, &b_time);
+      // num_edits = minimum_edit_distance(A, B);
+      break;
+    case 7:
+      num_edits = bidirectional2_edit_distance_block_hash(A, B, &b_time);
+      break;
+    case 8:
+      num_edits = bidirectional2_edit_distance_SA(A,B, &b_time, true);
+      // num_edits = EditDistanceBidirectional(A, B, &b_time);
+      break;
+    case 9:
+      num_edits = EditDistanceHashParallel_A(A, B, &b_time);
+      // num_edits = EditDistancePruning(A, B, &b_time);
+      break;
+    case 10:
+      num_edits = EditDistanceBlockHashParallel_A(A, B, &b_time);
+      break;
+    case 11:
+      num_edits = EditDistanceSA_A(A, B, &b_time, true);
+      break;
+    case 12:
+      num_edits = EditDistanceDP(A, B);
+      break;
+    default:
+      assert(0);
     }
     t.stop();
     if (i == 0) {

@@ -187,4 +187,43 @@ int query_rolling_blk(const parlay::sequence<T> &s1,
   return res;
 }
 
+template <typename T>
+int query_rolling_blk_rev(const parlay::sequence<T> &s1,
+                      const parlay::sequence<T> &s2,
+                      const parlay::sequence<hash_r_b_T> &table1,
+                      const parlay::sequence<hash_r_b_T> &table2, size_t i,
+                      size_t j) {
+  if ((size_t)i == 0 || (size_t)j == 0) return 0;
+  // if ((hash_r_b_T)s1[i] != (hash_r_b_T)s2[j]) return 0;
+  // if ((hash_r_b_T)s1[i + 1] != (hash_r_b_T)s2[j + 1]) return 1;
+  // if ((hash_r_b_T)s1[i + 2] != (hash_r_b_T)s2[j + 2]) return 2;
+  // if ((hash_r_b_T)s1[i + 3] != (hash_r_b_T)s2[j + 3]) return 3;
+  for (uint32_t k = 0; k < 8; k++) {
+    if ((hash_r_b_T)s1[i - k] != (hash_r_b_T)s2[j - k]) return k;
+  }
+
+  size_t try_r = 1;
+  size_t r = std::min(i,j);
+  size_t l = 0;
+  while (try_r < r && get_inter_hash_blk(s1, table1, i-try_r, i) ==
+                          get_inter_hash_blk(s2, table2, j - try_r, j)) {
+    l = try_r;
+    try_r *= 2;
+  }
+
+  r = std::min(try_r, r);
+  size_t res = 0;
+  while (l <= r) {
+    size_t m = l + (r - l) / 2;
+    if (get_inter_hash_blk(s1, table1, i -m + 1, i) ==
+        get_inter_hash_blk(s2, table2, j - m +1, j)) {
+      res = m;
+      l = m + 1;
+    } else {
+      r = m - 1;
+    }
+  }
+  return res;
+}
+
 #endif

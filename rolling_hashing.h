@@ -135,4 +135,46 @@ int query_rolling(const parlay::sequence<T> &s1, const parlay::sequence<T> &s2,
   return res;
 }
 
+template <typename T>
+int query_rolling_rev(const parlay::sequence<T>& s1, const parlay::sequence<T>& s2,
+                  const parlay::sequence<hash_r_T>& table1,
+                  const parlay::sequence<hash_r_T>& table2, size_t i,
+                  size_t j) {
+  //if (i >= s1.size() || j >= s2.size()) return 0;
+  if (i == 0 || j == 0) return 0;
+
+  uint32_t k = 0;
+  for (uint32_t k = 0; k < 8; k++) {
+    if (i < k || j < k) return k;  // Make sure you don't access out-of-bounds
+    if ((hash_r_T)s1[i - k] != (hash_r_T)s2[j - k]) return k;
+  }
+
+  int try_r = 1;
+  int r = std::min(i, j);
+  int l = 0;
+
+  while (try_r <= r &&
+         get_hash(table1, i - try_r, i ) ==
+             get_hash(table2, j - try_r , j)) {
+    l = try_r;
+    try_r *= 2;
+  }
+
+  r = std::min(try_r, r);
+
+uint32_t res = 0;
+while (l <= r) {
+  uint32_t m = l + (r - l) / 2;
+  //if (get_hash(table1, i - m + 1, i) == get_hash(table2, j - m + 1, j)) {
+    if (get_hash(table1, i - m +1, i) == get_hash(table2, j - m +1, j)) {
+    res = m;
+    l = m + 1;
+  } else {
+    r = m - 1;
+  }
+}
+return res;
+}
+
+
 #endif

@@ -28,13 +28,14 @@ For synthetic dataset:
 ./test_framework <id> <n> <k> <sigma> <rounds>
 ```
 + id: id of the algorithm  
-    + id=-1 all of our algorithms [BFS-Hash, BFS-H-Hash, BFS-SA, DaC-SP]
+    + id=-1 all of the algorithms [BFS-Hash, BFS-H-Hash, BFS-SA, DaC-SP, DP, Bidirectional, Pruning]
     + id=0: BFS-Hash
     + id=1: BFS-H-Hash
     + id=2: BFS-SA
     + id=3: DaC-SP
-    + id=4: Sequential DP
-    + id=5: ParlayLib
+    + id=4: My versions of DP
+    + id=5: Bidirectional BFS
+    + id=6: BFS-SA-Pruning
 + n: estimated length of strings  
 + k: estimated number of edits  
 + sigma: alphabet size  

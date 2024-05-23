@@ -11,6 +11,27 @@ project(
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+option(ENABLE_SANITIZER "Enable AddressSanitizer" OFF)
+
+#Til OMP 
+#set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang")
+#set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
+
+#find_package(OpenMP)
+#if(OPENMP_FOUND)
+#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+#    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+#endif()
+
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L/usr/local/opt/llvm/lib -Wl,-rpath,/usr/local/opt/llvm/lib")
+
+# Sanitizer configuration
+if(ENABLE_SANITIZER)
+  add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g)
+  add_link_options(-fsanitize=address)
+endif()
+
 option(CILKPLUS "" OFF)
 option(OPENCILK "" OFF)
 option(SERIAL "" OFF)
@@ -27,6 +48,7 @@ else()
 endif()
 
 add_compile_options(-O3 -mcx16 -march=native)
+
 
 if(STDALLOC)
   add_compile_options(-DPARLAY_USE_STD_ALLOC)
