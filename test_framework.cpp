@@ -213,21 +213,21 @@ double test(const parlay::sequence<T> &A, const parlay::sequence<T> &B,
     t.stop();
     if (i == 0)
     {
-      //printf("#edits: %zu\n", num_edits);
-      //printf("Warmup round: %f\n", t.total_time());
+      printf("#edits: %zu\n", num_edits);
+      printf("Warmup round: %f\n", t.total_time());
     }
     else
     {
-      //printf("Round %zu: %f\n", i, t.total_time());
+      printf("Round %zu: %f\n", i, t.total_time());
       total_time += t.total_time();
       building_time_total += b_time;
     }
   }
   double average_time = total_time / num_rounds;
-  //printf("Average time: %f\n", total_time / num_rounds);
-  //printf("Average Building time: %f\n", building_time_total / num_rounds);
-  printf("%f\n", total_time / num_rounds);
-  printf("%f\n", building_time_total / num_rounds);
+  printf("Average time: %f\n", total_time / num_rounds);
+  printf("Average Building time: %f\n", building_time_total / num_rounds);
+  //printf("%f\n", total_time / num_rounds);
+  //printf("%f\n", building_time_total / num_rounds);
 
   return average_time;
 }

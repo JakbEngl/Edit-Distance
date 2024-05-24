@@ -39,7 +39,7 @@ int bidirectional2_edit_distance_hash(const Seq &a, const Seq &b, double *buildi
 
   parlay::sequence<int> max_row(n + m + 1, -1), temp(n + m + 1);
   //parlay::sequence<int> old_max(n - m + 20, -1);
-  parlay::sequence<int> old_max(50, -1);
+  parlay::sequence<int> old_max(std::max(abs(n-m)+1,50), -1);
  
   // Jakob Engel Tomfoolery
   /*Seq a_reversed = a;
@@ -56,7 +56,7 @@ int bidirectional2_edit_distance_hash(const Seq &a, const Seq &b, double *buildi
 
   parlay::sequence<int> rev_max_row(n + m + 1, -1), rev_temp(n + m + 1);
   //parlay::sequence<int> rev_old_max(n - m + 20, -1);
-  parlay::sequence<int> rev_old_max(50, -1);
+  parlay::sequence<int> rev_old_max(std::max(abs(n-m) + 1,50), -1);
   auto get_index = [&](int index) -> int {
         return index < 0 ? old_max.size() + index : index;
     };
@@ -215,7 +215,7 @@ int bidirectional2_edit_distance_hash(const Seq &a, const Seq &b, double *buildi
   if (r >= l2){
     parlay::parallel_for(l2, r + 1, [&](int id){
       if (max_row[id] >= rev_max_row[id] && rev_max_row[id] != -1){
-        if (((max_row[id] >= rev_old_max[get_index_rev(id-m)] && rev_old_max[get_index_rev(id-m)] != -1 ) || (old_max[get_index(id-m)] >= rev_max_row[id] && rev_max_row[id] != -1)) && !found){
+        if ((((max_row[id] >= rev_old_max[get_index_rev(id-m)]) && rev_old_max[get_index_rev(id-m)] != -1 ) || ((old_max[get_index(id-m)] >= rev_max_row[id]) && rev_max_row[id] != -1)) && !found){
           found = true;
         }
         pathFound = true;}
